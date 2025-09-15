@@ -27,10 +27,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           flavor: |
-            latest=false
+            latest=true
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'release' && github.event.action == 'published' && github.event.release.prerelease == false }}
-            type=ref,event=tag
             type=ref,event=branch
 
       - name: Setup QEMU
