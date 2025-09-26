@@ -107,7 +107,13 @@ func (c *SFTPServer) Run() error {
 			go func(conn net.Conn) {
 				defer conn.Close()
 				if err := c.AcceptInbound(conn, conf); err != nil {
-					log.WithField("error", err).WithField("ip", conn.RemoteAddr().String()).Error("sftp: failed to accept inbound connection")
+					errMsg := err.Error()
+					logger := "error"
+					if strings.Contains(errMsg, "no auth passed yet") {
+						logger = "debug"
+					}
+
+					log.WithField(logger, err).WithField("ip", conn.RemoteAddr().String()).Error("sftp: failed to accept inbound connection")
 				}
 			}(conn)
 		}
@@ -219,16 +225,15 @@ func (c *SFTPServer) makeCredentialsRequest(conn ssh.ConnMetadata, t remote.Sftp
 	logger.Debug("validating credentials for SFTP connection")
 
 	if !validUsernameRegexp.MatchString(request.User) {
-		logger.Warn("failed to validate user credentials (invalid format)")
+		logger.Debug("failed to validate user credentials (invalid format)")
 		return nil, &remote.SftpInvalidCredentialsError{}
 	}
 
 	resp, err := c.manager.Client().ValidateSftpCredentials(context.Background(), request)
 	if err != nil {
-		if _, ok := err.(*remote.SftpInvalidCredentialsError); ok {
-			logger.Warn("failed to validate user credentials (invalid username or password)")
-		} else {
-			logger.WithField("error", err).Error("encountered an error while trying to validate user credentials")
+		var sftpInvalidCredentialsError *remote.SftpInvalidCredentialsError
+		if errors.As(err, &sftpInvalidCredentialsError) {
+			logger.Debug("failed to validate user credentials (invalid username or password)")
 		}
 		return nil, err
 	}
