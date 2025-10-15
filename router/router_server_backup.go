@@ -194,12 +194,15 @@ func deleteServerBackup(c *gin.Context) {
 		return
 	}
 
-	// I'm not entirely sure how likely this is to happen, however if we did manage to
-	// locate the backup previously and it is now missing when we go to delete, just
-	// treat it as having been successful, rather than returning a 404.
-	if err := b.Remove(c); err != nil && !errors.Is(err, os.ErrNotExist) {
-		middleware.CaptureAndAbort(c, err)
-		return
-	}
-	c.Status(http.StatusNoContent)
+	c.Status(http.StatusAccepted)
+
+	// Delete the backup in the background
+	go func() {
+		// I'm not entirely sure how likely this is to happen, however if we did manage to
+		// locate the backup previously and it is now missing when we go to delete, just
+		// treat it as having been successful, rather than returning a 404.
+		if err := b.Remove(c.Copy()); err != nil && !errors.Is(err, os.ErrNotExist) {
+			log.Errorf("error deleting backup %s: %v", uuid, err)
+		}
+	}()
 }
