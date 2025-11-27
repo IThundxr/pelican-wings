@@ -25,6 +25,7 @@ const (
 	PowerActionStart     = "start"
 	PowerActionStop      = "stop"
 	PowerActionRestart   = "restart"
+	PowerActionSigterm   = "sigterm"
 	PowerActionTerminate = "kill"
 )
 
@@ -33,6 +34,7 @@ func (pa PowerAction) IsValid() bool {
 	return pa == PowerActionStart ||
 		pa == PowerActionStop ||
 		pa == PowerActionTerminate ||
+		pa == PowerActionSigterm ||
 		pa == PowerActionRestart
 }
 
@@ -159,6 +161,8 @@ func (s *Server) HandlePowerAction(action PowerAction, waitSeconds ...int) error
 		}
 
 		return s.Environment.Start(s.Context())
+	case PowerActionSigterm:
+		return s.Environment.Terminate(s.Context(), "SIGTERM")
 	case PowerActionTerminate:
 		return s.Environment.Terminate(s.Context(), "SIGKILL")
 	}
