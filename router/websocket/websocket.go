@@ -351,6 +351,7 @@ func (h *Handler) HandleInbound(ctx context.Context, m Message) error {
 			actions[server.PowerActionStart] = PermissionSendPowerStart
 			actions[server.PowerActionStop] = PermissionSendPowerStop
 			actions[server.PowerActionRestart] = PermissionSendPowerRestart
+			actions[server.PowerActionSigterm] = PermissionSendPowerStop
 			actions[server.PowerActionTerminate] = PermissionSendPowerStop
 
 			// Check that they have permission to perform this action if it is needed.
