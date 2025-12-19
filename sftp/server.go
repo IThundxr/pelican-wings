@@ -229,6 +229,11 @@ func (c *SFTPServer) makeCredentialsRequest(conn ssh.ConnMetadata, t remote.Sftp
 		return nil, &remote.SftpInvalidCredentialsError{}
 	}
 
+	if t == remote.SftpAuthPassword && config.Get().System.Sftp.KeyOnly {
+		logger.Warn("failed to validate user credentials (password authentication is disabled; only SSH keys are allowed)")
+		return nil, &remote.SftpKeyOnlyError{}
+	}
+
 	resp, err := c.manager.Client().ValidateSftpCredentials(context.Background(), request)
 	if err != nil {
 		var sftpInvalidCredentialsError *remote.SftpInvalidCredentialsError
