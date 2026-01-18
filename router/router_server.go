@@ -280,7 +280,16 @@ func deleteServer(c *gin.Context) {
 		p := fs.Path()
 		_ = fs.UnixFS().Close()
 		if err := os.RemoveAll(p); err != nil {
-			log.WithFields(log.Fields{"path": p, "error": err}).Warn("failed to remove server files during deletion process")
+			log.WithFields(log.Fields{"path": p, "error": err}).
+				Warn("failed to remove server files during deletion process")
+		}
+	}(s)
+
+	// remove hanging machine-id file for the server when removing
+	go func(s *server.Server) {
+		if err := os.Remove(filepath.Join(config.Get().System.MachineID.Directory, s.ID())); err != nil {
+			log.WithFields(log.Fields{"server_id": s.ID(), "error": err}).
+				Warn("failed to remove machine-id file for server")
 		}
 	}(s)
 
@@ -294,6 +303,8 @@ func deleteServer(c *gin.Context) {
 // Adds any of the JTIs passed through in the body to the deny list for the websocket
 // preventing any JWT generated before the current time from being used to connect to
 // the socket or send along commands.
+//
+// deprecated: prefer /api/deauthorize-user
 func postServerDenyWSTokens(c *gin.Context) {
 	var data struct {
 		JTIs []string `json:"jtis"`
